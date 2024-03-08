@@ -1,3 +1,4 @@
+// wanchengjiben
 #include "surakarta_rule_manager.h"
 #include <iostream>
 
@@ -7,38 +8,198 @@ void SurakartaRuleManager::OnUpdateBoard() {
     // You don't need to implement this function if you don't need it.
     // A more delicate way is to use Qt's signal and slot mechanism, but that's the advanced part.
 }
-
+int weizhi_line_1(int i, int j) {
+    if (i == 1)
+        return j;
+    if (j == 4)
+        return i + 6;
+    if (i == 4)
+        return 17 - j;
+    if (j == 1)
+        return 23 - i;
+}
+int weizhi_line_2(int i, int j) {
+    if (i == 2)
+        return j;
+    if (j == 3)
+        return i + 6;
+    if (i == 3)
+        return 17 - j;
+    if (j == 2)
+        return 23 - i;
+}
+int which_line(int i, int j) {
+    int f1 = 0, f2 = 0;
+    if ((i == 1) || (i == 4) || (j == 1) || (j == 4))
+        f1 = 1;
+    if ((i == 2) || (i == 3) || (j == 2) || (j == 3))
+        f2 = 2;
+    return f1 + f2;
+}
 SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& move) {
-    // TODO: Implement this function.
-
-    // An example of how to get the color of a piece and the current player.
-    for (unsigned int i = 0; i < board_size_; i++) {
-        for (unsigned int j = 0; j < board_size_; j++) {
-            PieceColor color = (*board_)[i][j]->GetColor();
-            if (color == PieceColor::BLACK) {
-                // i,j is the position of a black piece
-            } else if (color == PieceColor::WHITE) {
-                // i,j is the position of a white piece
-            } else {
-                // i,j is an empty position
-            }
-        }
-    }
+    int flag;  // black = 0  white = 1;
     SurakartaPlayer current_player = game_info_->current_player_;
     if (current_player == SurakartaPlayer::BLACK) {
-        // black player's turn
+        flag = 0;  // black player's turn
     } else if (current_player == SurakartaPlayer::WHITE) {
-        // white player's turn
+        flag = 1;  // white player's turn
     }
 
-    return SurakartaIllegalMoveReason::LEGAL;
+    if (move.from.x < 0 || move.from.x >= board_size_ || move.from.y < 0 || move.from.y >= board_size_ ||
+        move.to.x < 0 || move.to.x >= board_size_ || move.to.y < 0 || move.to.y >= board_size_) {
+        return SurakartaIllegalMoveReason::OUT_OF_BOARD;  // 返回超出棋盘范围的非法移动原因
+    }
+
+    if ((*board_)[move.from.x][move.from.y]->GetColor() != PieceColor::BLACK && (*board_)[move.from.x][move.from.y]->GetColor() != PieceColor::WHITE) {
+        return SurakartaIllegalMoveReason::NOT_PIECE;  // 返回移动了一个不是棋子的位置的非法移动原因
+    }
+
+    if (((*board_)[move.from.x][move.from.y]->GetColor() == PieceColor::BLACK && flag == 1) || (((*board_)[move.from.x][move.from.y]->GetColor() == PieceColor::WHITE) && flag == 0)) {
+        return SurakartaIllegalMoveReason::NOT_PLAYER_PIECE;  // 返回移动了not the player's的非法移动原因
+    }
+    if ((*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::BLACK && (*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::WHITE) {
+        return SurakartaIllegalMoveReason::LEGAL_NON_CAPTURE_MOVE;  //
+    }
+    if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK || (*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && (move.to.x == 0) + (move.to.y == 0) + (move.to.y == board_size_ - 1) + (move.to.y == board_size_ - 1) + (move.from.x == 0) + (move.from.y == 0) + (move.from.x == board_size_ - 1) + (move.from.y == board_size_ - 1) == 2) {
+        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
+    }
+    if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK && flag == 0) || (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && flag == 1)) {
+        return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;  // eat the same color
+    }
+    int po_from, po_to, line_from, line_to;
+    line_from = which_line(move.from.x, move.from.y);
+    line_to = which_line(move.to.x, move.to.y);
+    if (line_from != 3 && line_from != line_to && line_to != 3) {
+        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
+    }
+    int line_1[25] = {1}, line_2[25] = {1};
+
+    if (line_from == 1 || line_to == 1 || (line_to == 3 && line_from == 3)) {
+        for (int i = 0; i <= 5; i++) {
+            if ((*board_)[1][i]->GetColor() != PieceColor::BLACK && (*board_)[1][i]->GetColor() != PieceColor::WHITE) {
+                line_1[i] = 0;
+            }
+            if ((*board_)[i][4]->GetColor() != PieceColor::BLACK && (*board_)[i][4]->GetColor() != PieceColor::WHITE) {
+                line_1[i + 6] = 0;
+            }
+            if ((*board_)[4][5 - i]->GetColor() != PieceColor::BLACK && (*board_)[4][5 - i]->GetColor() != PieceColor::WHITE) {
+                line_1[i + 12] = 0;
+            }
+            if ((*board_)[5 - i][1]->GetColor() != PieceColor::BLACK && (*board_)[5 - i][1]->GetColor() != PieceColor::WHITE) {
+                line_1[i + 18] = 0;
+            }
+        }
+        po_from = weizhi_line_1(move.from.x, move.from.y);
+        po_to = weizhi_line_1(move.to.x, move.to.y);
+        int ff = 0;
+        for (int i = po_from + 1;; i++) {
+            if (i == 24)
+                i = 0;
+            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
+                ff = 1;
+            if (i == po_to && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
+            if (line_1[i] != 0)
+                break;
+        }
+        for (int i = po_from - 1;; i--) {
+            if (i == -1)
+                i = 23;
+            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
+                ff = 1;
+            if (i == po_to && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
+            if (line_1[i] != 0)
+                break;
+        }
+
+        if (line_from == 1 || line_to == 1)
+            return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
+    }
+    if (line_from == 2 || line_to == 2 || (line_to == 3 && line_from == 3)) {
+        for (int i = 0; i <= 5; i++) {
+            if ((*board_)[2][i]->GetColor() != PieceColor::BLACK && (*board_)[2][i]->GetColor() != PieceColor::WHITE) {
+                line_2[i] = 0;
+            }
+            if ((*board_)[i][3]->GetColor() != PieceColor::BLACK && (*board_)[i][3]->GetColor() != PieceColor::WHITE) {
+                line_2[i + 6] = 0;
+            }
+            if ((*board_)[3][5 - i]->GetColor() != PieceColor::BLACK && (*board_)[3][5 - i]->GetColor() != PieceColor::WHITE) {
+                line_2[i + 12] = 0;
+            }
+            if ((*board_)[5 - i][2]->GetColor() != PieceColor::BLACK && (*board_)[5 - i][2]->GetColor() != PieceColor::WHITE) {
+                line_2[i + 18] = 0;
+            }
+        }
+        po_from = weizhi_line_2(move.from.x, move.from.y);
+        po_to = weizhi_line_2(move.to.x, move.to.y);  //???
+        int ff = 0;
+        for (int i = po_from + 1;; i++) {
+            if (i == 24)
+                i = 0;
+            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
+                ff = 1;
+            if (i == po_to && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
+            if (line_1[i] != 0)
+                break;
+        }
+        for (int i = po_from - 1;; i--) {
+            if (i == -1)
+                i = 23;
+            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
+                ff = 1;
+            if (i == po_to && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
+            if (line_1[i] != 0)
+                break;
+        }
+        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
+    }
+    return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
 }
 
 std::pair<SurakartaEndReason, SurakartaPlayer> SurakartaRuleManager::JudgeEnd(const SurakartaIllegalMoveReason reason) {
-    // TODO: Implement this function.
-    // Note that at this point, the board and game_info have not been updated yet.
-
-    return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);
+    int flag;
+    SurakartaPlayer current_player = game_info_->current_player_;
+    if (current_player == SurakartaPlayer::BLACK) {
+        flag = 0;  // black player's turn
+    } else if (current_player == SurakartaPlayer::WHITE) {
+        flag = 1;  // white player's turn
+    }
+    if (reason == SurakartaIllegalMoveReason::LEGAL_NON_CAPTURE_MOVE || reason == SurakartaIllegalMoveReason::ILLIGAL || reason == SurakartaIllegalMoveReason::NOT_PLAYER_TURN || reason == SurakartaIllegalMoveReason::OUT_OF_BOARD || reason == SurakartaIllegalMoveReason::NOT_PIECE || reason == SurakartaIllegalMoveReason::NOT_PLAYER_PIECE || reason == SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE || reason == SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE) {
+        if (flag == 0)
+            return std::make_pair(SurakartaEndReason::ILLIGAL_MOVE, SurakartaPlayer::BLACK);
+        else
+            return std::make_pair(SurakartaEndReason::ILLIGAL_MOVE, SurakartaPlayer::WHITE);
+    }
+    int blacknum = 0, whitenum = 0;
+    for (int i = 0; i < board_size_; i++) {
+        for (int j = 0; j < board_size_; j++) {
+            if ((*board_)[i][j]->GetColor() == PieceColor::BLACK) {
+                blacknum++;
+            }
+            if ((*board_)[i][j]->GetColor() == PieceColor::WHITE) {
+                whitenum++;
+            }
+        }
+    }
+    if (blacknum > 1 && whitenum > 1) {
+        if (flag == 0)
+            return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::BLACK);
+        else
+            return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::WHITE);
+    }
+    if (blacknum == 1 && flag == 1 && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
+        return std::make_pair(SurakartaEndReason::CHECKMATE, SurakartaPlayer::WHITE);
+    }
+    if (whitenum == 1 && flag == 0 && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
+        return std::make_pair(SurakartaEndReason::CHECKMATE, SurakartaPlayer::BLACK);
+    }
+    if (flag == 0)
+        return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::BLACK);
+    else
+        return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::WHITE);
 }
 
 std::unique_ptr<std::vector<SurakartaPosition>> SurakartaRuleManager::GetAllLegalTarget(const SurakartaPosition postion) {

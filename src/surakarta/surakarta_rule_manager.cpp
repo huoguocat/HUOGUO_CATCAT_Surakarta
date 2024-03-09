@@ -58,14 +58,28 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
         return SurakartaIllegalMoveReason::NOT_PLAYER_PIECE;  // 返回移动了not the player's的非法移动原因
     }
     if ((*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::BLACK && (*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::WHITE) {
-        return SurakartaIllegalMoveReason::LEGAL_NON_CAPTURE_MOVE;  //
-    }
-    if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK || (*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && (move.to.x == 0) + (move.to.y == 0) + (move.to.y == board_size_ - 1) + (move.to.y == board_size_ - 1) + (move.from.x == 0) + (move.from.y == 0) + (move.from.x == board_size_ - 1) + (move.from.y == board_size_ - 1) == 2) {
-        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
+        int xf, yf;
+        if (move.from.x <= move.to.x)
+            xf = move.to.x - move.from.x;
+        else
+            xf = move.from.x - move.to.x;
+        if (move.from.y <= move.to.y)
+            yf = move.to.y - move.from.y;
+        else
+            yf = move.from.y - move.to.y;
+
+        if (xf <= 1 && yf <= 1)                                         //&& (move.to.x - move.from.x) >= -1 && (move.to.y - move.from.y) <= 1 && (move.to.y - move.from.y) >= -1)
+            return SurakartaIllegalMoveReason::LEGAL_NON_CAPTURE_MOVE;  //
+        else
+            return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;
     }
     if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK && flag == 0) || (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && flag == 1)) {
         return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;  // eat the same color
     }
+    if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK || (*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && (((move.to.x == 0) + (move.to.y == 0) + (move.to.x == board_size_ - 1) + (move.to.y == board_size_ - 1) == 2) || ((move.from.x == 0) + (move.from.y == 0) + (move.from.x == board_size_ - 1) + (move.from.y == board_size_ - 1) == 2))) {
+        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
+    }
+
     int po_from, po_to, line_from, line_to;
     line_from = which_line(move.from.x, move.from.y);
     line_to = which_line(move.to.x, move.to.y);
@@ -91,24 +105,36 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
         }
         po_from = weizhi_line_1(move.from.x, move.from.y);
         po_to = weizhi_line_1(move.to.x, move.to.y);
+        int po_to2 = 100;
+        if (po_to == 1 || po_to == 4 || po_to == 10 || po_to == 16) {
+            if (po_to == 4 || po_to == 10 || po_to == 16)
+                po_to2 = po_to + 3;
+            if (po_to == 1)
+                po_to2 = 22;
+        }
+        if ((po_from == 0 && po_to == 23) || (po_from == 23 && po_to == 0) || (po_from == 17 && po_to == 18) || (po_from == 11 && po_to == 12) || (po_from == 12 && po_to == 11) || (po_from == 18 && po_to == 17) || (po_from == 5 && po_to == 6) || (po_from == 6 && po_to == 5))
+            return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
         int ff = 0;
         for (int i = po_from + 1;; i++) {
             if (i == 24)
                 i = 0;
+
+            if ((i == po_to || i == po_to2) && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
             if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                 ff = 1;
-            if (i == po_to && ff == 1)
-                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
             if (line_1[i] != 0)
                 break;
         }
+        ff = 0;
         for (int i = po_from - 1;; i--) {
             if (i == -1)
                 i = 23;
+
+            if ((i == po_to || i == po_to2) && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
             if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                 ff = 1;
-            if (i == po_to && ff == 1)
-                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
             if (line_1[i] != 0)
                 break;
         }
@@ -121,79 +147,28 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
             for (int i = po_from + 1;; i++) {
                 if (i == 24)
                     i = 0;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                if (line_1[i] != 0)
-                    break;
-            }
-            for (int i = po_from - 1;; i--) {
-                if (i == -1)
-                    i = 23;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                if (line_1[i] != 0)
-                    break;
-            }
-        }
-        if (po_to == 1 || po_to == 4 || po_to == 10 || po_to == 16) {
-            if (po_to == 4 || po_to == 10 || po_to == 16)
-                po_to = po_to + 3;
-            if (po_to == 1)
-                po_to = 22;
 
-            ff = 0;
-            for (int i = po_from + 1;; i++) {
-                if (i == 24)
-                    i = 0;
+                if ((i == po_to || i == po_to2) && ff == 1)
+                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
                 if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                     ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
                 if (line_1[i] != 0)
                     break;
             }
+            ff = 0;
             for (int i = po_from - 1;; i--) {
                 if (i == -1)
                     i = 23;
+
+                if ((i == po_to || i == po_to2) && ff == 1)
+                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
                 if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                     ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
                 if (line_1[i] != 0)
                     break;
             }
-            if (po_from == 1 || po_from == 4 || po_from == 10 || po_from == 16) {
-                if (po_from == 4 || po_from == 10 || po_from == 16)
-                    po_from = po_from + 3;
-                if (po_from == 1)
-                    po_from = 22;
-                ff = 0;
-                for (int i = po_from + 1;; i++) {
-                    if (i == 24)
-                        i = 0;
-                    if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                        ff = 1;
-                    if (i == po_to && ff == 1)
-                        return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                    if (line_1[i] != 0)
-                        break;
-                }
-                for (int i = po_from - 1;; i--) {
-                    if (i == -1)
-                        i = 23;
-                    if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                        ff = 1;
-                    if (i == po_to && ff == 1)
-                        return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                    if (line_1[i] != 0)
-                        break;
-                }
-            }
         }
+
         if (line_from == 1 || line_to == 1)
             return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
     }
@@ -214,118 +189,74 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
         }
         po_from = weizhi_line_2(move.from.x, move.from.y);
         po_to = weizhi_line_2(move.to.x, move.to.y);  //???
+        int po_to2 = 100;
+        if (po_to == 3 || po_to == 9 || po_to == 15 || po_to == 2)  // 3=8 9=14 15=20 21=2
+        {
+            if (po_to == 3 || po_to == 9 || po_to == 15) {
+                po_to2 = po_to + 5;
+            }
+            if (po_to == 2)
+                po_to2 = 21;
+        }
+        if ((po_from == 0 && po_to == 23) || (po_from == 23 && po_to == 0) || (po_from == 17 && po_to == 18) || (po_from == 11 && po_to == 12) || (po_from == 12 && po_to == 11) || (po_from == 18 && po_to == 17) || (po_from == 5 && po_to == 6) || (po_from == 6 && po_to == 5))
+            return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
         int ff = 0;
         for (int i = po_from + 1;; i++) {
             if (i == 24)
                 i = 0;
+
+            if ((i == po_to || i == po_to2) && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
             if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                 ff = 1;
-            if (i == po_to && ff == 1)
-                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-            if (line_1[i] != 0)
+            if (line_2[i] != 0)
                 break;
         }
         ff = 0;
         for (int i = po_from - 1;; i--) {
             if (i == -1)
                 i = 23;
+
+            if ((i == po_to || i == po_to2) && ff == 1)
+                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
             if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                 ff = 1;
-            if (i == po_to && ff == 1)
-                return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-            if (line_1[i] != 0)
+            if (line_2[i] != 0)
                 break;
         }
-        if (po_from == 3 || po_from == 9 || po_from == 15 || po_from == 21)  // 3=8 9=14 15=20 21=2
+        if (po_from == 3 || po_from == 9 || po_from == 15 || po_from == 2)  // 3=8 9=14 15=20 21=2
         {
             if (po_from == 3 || po_from == 9 || po_from == 15) {
                 po_from = po_from + 5;
             }
-            if (po_from == 21)
-                po_from = 2;
+            if (po_from == 2)
+                po_from = 21;
             ff = 0;
             for (int i = po_from + 1;; i++) {
                 if (i == 24)
                     i = 0;
+
+                if ((i == po_to || i == po_to2) && ff == 1)
+                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
+                if (line_2[i] != 0)
+                    break;
                 if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                     ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                if (line_1[i] != 0)
-                    break;
             }
             ff = 0;
             for (int i = po_from - 1;; i--) {
                 if (i == -1)
                     i = 23;
+
+                if ((i == po_to || i == po_to2) && ff == 1)
+                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
+                if (line_2[i] != 0)
+                    break;
                 if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
                     ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                if (line_1[i] != 0)
-                    break;
             }
         }
-        if (po_to == 3 || po_to == 9 || po_to == 15 || po_to == 21)  // 3=8 9=14 15=20 21=2
-        {
-            if (po_to == 3 || po_to == 9 || po_to == 15) {
-                po_to = po_to + 5;
-            }
-            if (po_to == 21)
-                po_to = 2;
-            ff = 0;
-            for (int i = po_from + 1;; i++) {
-                if (i == 24)
-                    i = 0;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                if (line_1[i] != 0)
-                    break;
-            }
-            ff = 0;
-            for (int i = po_from - 1;; i--) {
-                if (i == -1)
-                    i = 23;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-                if (i == po_to && ff == 1)
-                    return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                if (line_1[i] != 0)
-                    break;
-            }
-            if (po_from == 3 || po_from == 9 || po_from == 15 || po_from == 21)  // 3=8 9=14 15=20 21=2
-            {
-                if (po_from == 3 || po_from == 9 || po_from == 15) {
-                    po_from = po_from + 5;
-                }
-                if (po_from == 21)
-                    po_from = 2;
-                ff = 0;
-                for (int i = po_from + 1;; i++) {
-                    if (i == 24)
-                        i = 0;
-                    if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                        ff = 1;
-                    if (i == po_to && ff == 1)
-                        return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                    if (line_1[i] != 0)
-                        break;
-                }
-                ff = 0;
-                for (int i = po_from - 1;; i--) {
-                    if (i == -1)
-                        i = 23;
-                    if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                        ff = 1;
-                    if (i == po_to && ff == 1)
-                        return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
-                    if (line_1[i] != 0)
-                        break;
-                }
-            }
-        }
+
         return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
     }
 }
@@ -353,22 +284,24 @@ std::pair<SurakartaEndReason, SurakartaPlayer> SurakartaRuleManager::JudgeEnd(co
             }
         }
     }
-    if (blacknum > 1 && whitenum > 1) {
-        if (flag == 0)
-            return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);
-        else
-            return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);
-    }
+
     if (blacknum == 1 && flag == 1 && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
         return std::make_pair(SurakartaEndReason::CHECKMATE, SurakartaPlayer::WHITE);
     }
     if (whitenum == 1 && flag == 0 && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
         return std::make_pair(SurakartaEndReason::CHECKMATE, SurakartaPlayer::BLACK);
     }
+
     if (flag == 0)
         return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::WHITE);
     else
         return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::BLACK);
+    if (blacknum >= 1 && whitenum >= 1) {
+        if (flag == 0)
+            return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);
+        else
+            return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);
+    }
 }
 
 std::unique_ptr<std::vector<SurakartaPosition>> SurakartaRuleManager::GetAllLegalTarget(const SurakartaPosition postion) {

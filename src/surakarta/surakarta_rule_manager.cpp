@@ -291,11 +291,28 @@ std::pair<SurakartaEndReason, SurakartaPlayer> SurakartaRuleManager::JudgeEnd(co
     if (whitenum == 1 && flag == 0 && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
         return std::make_pair(SurakartaEndReason::CHECKMATE, SurakartaPlayer::BLACK);
     }
-
-    if (flag == 0)
-        return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::WHITE);
-    else
-        return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::BLACK);
+    if (reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
+        return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);
+    }
+    unsigned int NUMROUND = game_info_->num_round_;
+    unsigned int last = game_info_->last_captured_round_;
+    unsigned int no = game_info_->max_no_capture_round_;
+    if (NUMROUND - last == no) {
+        if (whitenum > blacknum)
+            return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::WHITE);
+        if (blacknum > whitenum)
+            return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::BLACK);
+        else
+            return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::NONE);
+    }
+    /*if (NUMROUND - last - 1 == no && last != 0) {
+         if (whitenum > blacknum)
+             return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::WHITE);
+         if (blacknum > whitenum)
+             return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::BLACK);
+         else
+             return std::make_pair(SurakartaEndReason::STALEMATE, SurakartaPlayer::NONE);
+     }*/
     if (blacknum >= 1 && whitenum >= 1) {
         if (flag == 0)
             return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);

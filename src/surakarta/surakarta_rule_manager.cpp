@@ -8,8 +8,7 @@ void SurakartaRuleManager::OnUpdateBoard() {
     // You don't need to implement this function if you don't need it.
     // A more delicate way is to use Qt's signal and slot mechanism, but that's the advanced part.
 }
-int weizhi_line_1(int i, int j) //确定是在第一条路上的第几个位置
-{
+int weizhi_line_1(int i, int j) {
     if (i == 1)
         return j;
     if (j == 4)
@@ -19,8 +18,7 @@ int weizhi_line_1(int i, int j) //确定是在第一条路上的第几个位置
     if (j == 1)
         return 23 - i;
 }
-int weizhi_line_2(int i, int j)//确定是在第二条路上的第几个位置
- {
+int weizhi_line_2(int i, int j) {
     if (i == 2)
         return j;
     if (j == 3)
@@ -30,8 +28,7 @@ int weizhi_line_2(int i, int j)//确定是在第二条路上的第几个位置
     if (j == 2)
         return 23 - i;
 }
-int which_line(int i, int j)//确定是哪一条路
- {
+int which_line(int i, int j) {
     int f1 = 0, f2 = 0;
     if ((i == 1) || (i == 4) || (j == 1) || (j == 4))
         f1 = 1;
@@ -39,14 +36,7 @@ int which_line(int i, int j)//确定是哪一条路
         f2 = 2;
     return f1 + f2;
 }
-/*  0               17
- 23 1/22 21   20  16/19  18
-    2               15
-    3               14
-  6 4/7   8   9   10/13 11 
-    5               12  一个轨道
-*/
-    SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& move) {
+SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& move) {
     int flag;  // black = 0  white = 1;
     SurakartaPlayer current_player = game_info_->current_player_;
     if (current_player == SurakartaPlayer::BLACK) {
@@ -68,7 +58,7 @@ int which_line(int i, int j)//确定是哪一条路
         return SurakartaIllegalMoveReason::NOT_PLAYER_PIECE;  // 返回移动了not the player's的非法移动原因
     }
     if ((*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::BLACK && (*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::WHITE) {
-        int xf, yf;//判断有没有在周围一格内移动
+        int xf, yf;
         if (move.from.x <= move.to.x)
             xf = move.to.x - move.from.x;
         else
@@ -78,29 +68,28 @@ int which_line(int i, int j)//确定是哪一条路
         else
             yf = move.from.y - move.to.y;
 
-        if (xf <= 1 && yf <= 1)                                       
-             return SurakartaIllegalMoveReason::LEGAL_NON_CAPTURE_MOVE;  //在周围一个内不吃子移动
+        if (xf <= 1 && yf <= 1)                                         //&& (move.to.x - move.from.x) >= -1 && (move.to.y - move.from.y) <= 1 && (move.to.y - move.from.y) >= -1)
+            return SurakartaIllegalMoveReason::LEGAL_NON_CAPTURE_MOVE;  //
         else
-            return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;//没有在周围一格
+            return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;
     }
     if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK && flag == 0) || (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && flag == 1)) {
         return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;  // eat the same color
     }
     if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK || (*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && (((move.to.x == 0) + (move.to.y == 0) + (move.to.x == board_size_ - 1) + (move.to.y == board_size_ - 1) == 2) || ((move.from.x == 0) + (move.from.y == 0) + (move.from.x == board_size_ - 1) + (move.from.y == board_size_ - 1) == 2))) {
-        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;//如果在四个小角落就不能
+        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
     }
 
     int po_from, po_to, line_from, line_to;
     line_from = which_line(move.from.x, move.from.y);
     line_to = which_line(move.to.x, move.to.y);
     if (line_from != 3 && line_from != line_to && line_to != 3) {
-        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;//如果要吃的子和移动的子不在一条路上 吃不到
+        return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
     }
-    int line_1[25] = {0}, line_2[25] = {0};
+    int line_1[1000] = {0}, line_2[1000] = {0};
 
     if (line_from == 1 || line_to == 1 || (line_to == 3 && line_from == 3)) {
-        for (int i = 0; i <= 5; i++) //读取这一条路上的棋子状态 line【x】 如果有挡路 1 没有棋子 0
-        {
+        for (int i = 0; i <= 5; i++) {
             if ((*board_)[1][i]->GetColor() == PieceColor::BLACK || (*board_)[1][i]->GetColor() == PieceColor::WHITE) {
                 line_1[i] = 1;
             }
@@ -116,19 +105,22 @@ int which_line(int i, int j)//确定是哪一条路
         }
         po_from = weizhi_line_1(move.from.x, move.from.y);
         po_to = weizhi_line_1(move.to.x, move.to.y);
-        int po_to2 = 100;
-        if (po_to == 1 || po_to == 4 || po_to == 10 || po_to == 16)//关于交叉点处,到达此处可能能有两个标记点数字，到达任意一个即可。
-         {
+        int po_to2 = 100, po_from2 = 100;
+        if (po_from == 4 || po_from == 10 || po_from == 16)
+            po_from2 = po_from + 3;
+        if (po_from == 1)
+            po_from2 = 22;
+        line_1[po_from2] = 0;
+        line_1[po_from] = 0;
+        if (po_to == 1 || po_to == 4 || po_to == 10 || po_to == 16) {
             if (po_to == 4 || po_to == 10 || po_to == 16)
                 po_to2 = po_to + 3;
             if (po_to == 1)
                 po_to2 = 22;
         }
-       //当正好在旋吃轨迹两端时可以直接吃
         if ((po_from == 0 && po_to == 23) || (po_from == 23 && po_to == 0) || (po_from == 17 && po_to == 18) || (po_from == 11 && po_to == 12) || (po_from == 12 && po_to == 11) || (po_from == 18 && po_to == 17) || (po_from == 5 && po_to == 6) || (po_from == 6 && po_to == 5))
             return SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE;
         int ff = 0;
-        //开始向坐标增大方向旋吃
         for (int i = po_from + 1;; i++) {
             if (i == 24)
                 i = 0;
@@ -141,7 +133,6 @@ int which_line(int i, int j)//确定是哪一条路
                 break;
         }
         ff = 0;
-         //开始向坐标减小方向旋吃
         for (int i = po_from - 1;; i--) {
             if (i == -1)
                 i = 23;
@@ -153,7 +144,6 @@ int which_line(int i, int j)//确定是哪一条路
             if (line_1[i] != 0)
                 break;
         }
-        //当from也在交叉点时候 from也有两个目标
         if (po_from == 1 || po_from == 4 || po_from == 10 || po_from == 16) {
             if (po_from == 4 || po_from == 10 || po_from == 16)
                 po_from = po_from + 3;
@@ -184,11 +174,11 @@ int which_line(int i, int j)//确定是哪一条路
                     break;
             }
         }
+
         if (line_from == 1 || line_to == 1)
             return SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE;
     }
-    if (line_from == 2 || line_to == 2 || (line_to == 3 && line_from == 3)) 
-    {
+    if (line_from == 2 || line_to == 2 || (line_to == 3 && line_from == 3)) {
         for (int i = 0; i <= 5; i++) {
             if ((*board_)[2][i]->GetColor() == PieceColor::BLACK || (*board_)[2][i]->GetColor() == PieceColor::WHITE) {
                 line_2[i] = 1;
@@ -204,8 +194,14 @@ int which_line(int i, int j)//确定是哪一条路
             }
         }
         po_from = weizhi_line_2(move.from.x, move.from.y);
-        po_to = weizhi_line_2(move.to.x, move.to.y);  //???
-        int po_to2 = 100;
+        po_to = weizhi_line_2(move.to.x, move.to.y);  //???z
+        int po_to2 = 100, po_from2 = 100;
+        if (po_from == 3 || po_from == 9 || po_from == 15)
+            po_from2 = po_from + 5;
+        if (po_from == 2)
+            po_from2 = 21;
+        line_2[po_from2] = 0;
+        line_2[po_from] = 0;
         if (po_to == 3 || po_to == 9 || po_to == 15 || po_to == 2)  // 3=8 9=14 15=20 21=2
         {
             if (po_to == 3 || po_to == 9 || po_to == 15) {

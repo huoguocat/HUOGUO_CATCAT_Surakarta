@@ -2,40 +2,8 @@
 #include <iostream>
 #include "surakarta/surakarta_rule_manager.cpp"
 #include "surakarta/surakarta_rule_manager.h"
-int flagg;                       // black = 0  white = 1;
-int weizhi_line_1(int i, int j)  // 确定是在第一条路上的第几个位置
-{
-    if (i == 1)
-        return j;
-    if (j == 4)
-        return i + 6;
-    if (i == 4)
-        return 17 - j;
-    if (j == 1)
-        return 23 - i;
-}
-int weizhi_line_2(int i, int j)  // 确定是在第二条路上的第几个位置
-{
-    if (i == 2)
-        return j;
-    if (j == 3)
-        return i + 6;
-    if (i == 3)
-        return 17 - j;
-    if (j == 2)
-        return 23 - i;
-}
-int which_line(int i, int j)  // 确定是哪一条路
-{
-    int f1 = 0, f2 = 0;
-    if ((i == 1) || (i == 4) || (j == 1) || (j == 4))
-        f1 = 1;
-    if ((i == 2) || (i == 3) || (j == 2) || (j == 3))
-        f2 = 2;
-    return f1 + f2;
-}
-
-int JudgeMove(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to_y_my, int qizi[6][6], int player) {
+int flagg;  // black = 0  white = 1;
+int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to_y_my, int qizi[6][6], int player) {
     if (move_from_x_my < 0 || move_from_x_my >= 6 || move_from_y_my < 0 || move_from_y_my >= 6 ||
         move_to_x_my < 0 || move_to_x_my >= 6 || move_to_y_my < 0 || move_to_y_my >= 6) {
         return -10;  // 返回超出棋盘范围的非法移动原因
@@ -97,7 +65,14 @@ int JudgeMove(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move
         }
         po_from = weizhi_line_1(move_from_x_my, move_from_y_my);
         po_to = weizhi_line_1(move_to_x_my, move_to_y_my);
-        int po_to2 = 100;
+        int po_to2 = 100, po_from2 = 100;
+        if (po_from == 4 || po_from == 10 || po_from == 16)
+            po_from2 = po_from + 3;
+        if (po_from == 1)
+            po_from2 = 22;
+        line_1[po_from2] = 0;
+        line_1[po_from] = 0;
+
         if (po_to == 1 || po_to == 4 || po_to == 10 || po_to == 16)  // 关于交叉点处,到达此处可能能有两个标记点数字，到达任意一个即可。
         {
             if (po_to == 4 || po_to == 10 || po_to == 16)
@@ -184,8 +159,14 @@ int JudgeMove(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move
             }
         }
         po_from = weizhi_line_2(move_from_x_my, move_from_y_my);
-        po_to = weizhi_line_2(move_to_x_my, move_to_y_my);  //???
-        int po_to2 = 100;
+        po_to = weizhi_line_2(move_to_x_my, move_to_y_my);  //???z
+        int po_to2 = 100, po_from2 = 100;
+        if (po_from == 3 || po_from == 9 || po_from == 15)
+            po_from2 = po_from + 5;
+        if (po_from == 2)
+            po_from2 = 21;
+        line_2[po_from2] = 0;
+        line_2[po_from] = 0;
         if (po_to == 3 || po_to == 9 || po_to == 15 || po_to == 2)  // 3=8 9=14 15=20 21=2
         {
             if (po_to == 3 || po_to == 9 || po_to == 15) {
@@ -262,9 +243,9 @@ int num_sou = 0;
 int qizi[6][6] = {2};
 
 int FenShuJudge(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to_y_my, int qizi[6][6], int player) {
-    if (JudgeMove(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == -10)
+    if (Fenshu(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == -10)
         return -10;
-    if (JudgeMove(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == 10)
+    if (Fenshu(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == 10)
         return 10;
     num_sou++;
     if (num_sou++ == 10) {
@@ -288,9 +269,9 @@ int FenShuJudge(int move_from_x_my, int move_from_y_my, int move_to_x_my, int mo
                     ff++;
                 }
             }
-            if (qizi[i][j] == 1 && player == 1) {
+            if (qizi[i][j] == 1) {
                 qizi[i][j] = 1;
-                if (flag == 1) {
+                if (player == 1) {
                     my_from_x[ff] = i;
                     my_from_y[ff] = j;
                     ff++;
@@ -302,18 +283,19 @@ int FenShuJudge(int move_from_x_my, int move_from_y_my, int move_to_x_my, int mo
     for (int i = 0; i < ff; i++) {
         for (int j = 0; j < 6; j++) {
             for (int k = 0; k < 6; k++) {
-                if (JudgeMove(my_from_x[i], my_from_y[i], j, k, qizi, player) == -10)
+                if (Fenshu(my_from_x[i], my_from_y[i], j, k, qizi, player) == -10)
                     continue;
-            }
-            fenshu = FenShuJudge(my_from_x[i], my_from_y[i], j, k, qizi, player);
-            if (fenshu == 10)
-                return (-1) * fenshu;
-            if (fenshu >= fenshumax) {
-                fenshumax = fenshu;
-                ready_from_x = my_from_x[i];
-                ready_from_y = my_from_y[i];
-                ready_to_x = j;
-                ready_to_y = k;
+
+                fenshu = FenShuJudge(my_from_x[i], my_from_y[i], j, k, qizi, player);
+                if (fenshu == 10)
+                    return (-1) * fenshu;
+                if (fenshu >= fenshumax) {
+                    fenshumax = fenshu;
+                    ready_from_x = my_from_x[i];
+                    ready_from_y = my_from_y[i];
+                    ready_to_x = j;
+                    ready_to_y = k;
+                }
             }
         }
     }
@@ -356,10 +338,9 @@ SurakartaMove SurakartaAgentMine::CalculateMove() {
     }  // which place I can move from
     int fenshu, fenshumax = -10000, ready_to_x, ready_to_y, ready_from_x, ready_from_y;
     for (int i = 0; i < ff; i++) {
-        mymove.from = SurakartaPosition(my_from_x[i], my_from_y[i]);
         for (int j = 0; j < 6; j++) {
             for (int k = 0; k < 6; k++) {
-                if (JudgeMove(my_from_x[i], my_from_y[i], j, k, qizi, player) == -10)
+                if (Fenshu(my_from_x[i], my_from_y[i], j, k, qizi, flag) == -10)
                     continue;
                 fenshu = FenShuJudge(my_from_x[i], my_from_y[i], j, k, qizi, flag);
                 if (fenshu >= fenshumax) {

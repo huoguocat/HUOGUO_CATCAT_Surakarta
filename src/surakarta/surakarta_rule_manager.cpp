@@ -192,7 +192,7 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
             if ((*board_)[5 - i][2]->GetColor() == PieceColor::BLACK || (*board_)[5 - i][2]->GetColor() == PieceColor::WHITE) {
                 line_2[i + 18] = 1;
             }
-        }
+        }  // 读取这一条路上的棋子状态 line【x】 如果有挡路 1 没有棋子 0
         po_from = weizhi_line_2(move.from.x, move.from.y);
         po_to = weizhi_line_2(move.to.x, move.to.y);  //???z
         int po_to2 = 100, po_from2 = 100;
@@ -204,7 +204,7 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
         line_2[po_from] = 0;
         if (po_to == 3 || po_to == 9 || po_to == 15 || po_to == 2)  // 3=8 9=14 15=20 21=2
         {
-            if (po_to == 3 || po_to == 9 || po_to == 15) {
+            if (po_to == 3 || po_to == 9 || po_to == 15) {  // 关于交叉点处,到达此处可能能有两个标记点数字，到达任意一个即可。
                 po_to2 = po_to + 5;
             }
             if (po_to == 2)

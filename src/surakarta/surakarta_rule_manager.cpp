@@ -1,9 +1,8 @@
-s  // wanchengjiben
+// wanchengjiben
 #include "surakarta_rule_manager.h"
 #include <iostream>
 
-    void
-    SurakartaRuleManager::OnUpdateBoard() {
+void SurakartaRuleManager::OnUpdateBoard() {
     // TODO:
     // Every time the board and game_info is updated to the next round version, this function will be called.
     // You don't need to implement this function if you don't need it.

@@ -1,20 +1,61 @@
 #include "surakarta/surakarta_agent/surakarta_agent_mine.h"
 #include <iostream>
-#include "surakarta/surakarta_rule_manager.cpp"
-#include "surakarta/surakarta_rule_manager.h"
-int flagg;  // black = 0  white = 1;
+int whatI;
+int num_sou = 0;
+
+int place_line_1(int i, int j) {
+    if (i == 1)
+        return j;
+    if (j == 4)
+        return i + 6;
+    if (i == 4)
+        return 17 - j;
+    if (j == 1)
+        return 23 - i;
+}
+int place_line_2(int i, int j) {
+    if (i == 2)
+        return j;
+    if (j == 3)
+        return i + 6;
+    if (i == 3)
+        return 17 - j;
+    if (j == 2)
+        return 23 - i;
+}
+int which_place_line(int i, int j) {
+    int f1 = 0, f2 = 0;
+    if ((i == 1) || (i == 4) || (j == 1) || (j == 4))
+        f1 = 1;
+    if ((i == 2) || (i == 3) || (j == 2) || (j == 3))
+        f2 = 2;
+    return f1 + f2;
+}
+int player;  // black = 0  white = 1;
 int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to_y_my, int qizi[6][6], int player) {
+    /* if (move_from_x_my == 0 && move_from_y_my == 1 && move_to_x_my == 0 && move_to_y_my == 2)
+     {
+         printf("%d %d %d %d", move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my);
+         for (int i = 0; i < 6; i++)
+         {
+             for (int j = 0; j < 6; j++)
+             {
+                 printf("%d", qizi[j][i]);
+             }
+             printf("\n");
+         }
+     }*/
     if (move_from_x_my < 0 || move_from_x_my >= 6 || move_from_y_my < 0 || move_from_y_my >= 6 ||
         move_to_x_my < 0 || move_to_x_my >= 6 || move_to_y_my < 0 || move_to_y_my >= 6) {
-        return -10;  // 返回超出棋盘范围的非法移动原因
+        return -6;  // 返回超出棋盘范围的非法移动原因
     }
 
     if (qizi[move_from_x_my][move_from_y_my] != 0 && qizi[move_from_x_my][move_from_y_my] != 1) {
-        return -10;  // 返回移动了一个不是棋子的位置的非法移动原因
+        return -6;  // 返回移动了一个不是棋子的位置的非法移动原因
     }
 
-    if ((qizi[move_from_x_my][move_from_y_my] == 0 && flagg == 1) || ((qizi[move_from_x_my][move_from_y_my] == 1) && flagg == 0)) {
-        return -10;  // 返回移动了not the player's的非法移动原因
+    if ((qizi[move_from_x_my][move_from_y_my] == 0 && player == 1) || ((qizi[move_from_x_my][move_from_y_my] == 1) && player == 0)) {
+        return -6;  // 返回移动了not the player's的非法移动原因
     }
     if (qizi[move_to_x_my][move_to_y_my] != 0 && qizi[move_to_x_my][move_to_y_my] != 1) {
         int xf, yf;  // 判断有没有在周围一格内移动
@@ -26,13 +67,14 @@ int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to
             yf = move_to_y_my - move_from_y_my;
         else
             yf = move_from_y_my - move_to_y_my;
-
+        // if (move_from_x_my == 0 && move_from_y_my == 1 && move_to_x_my == 0 && move_to_y_my == 2)
+        //  printf("fuckk %d %d", xf, yf);
         if (xf <= 1 && yf <= 1)
             return 0;  // 在周围一个内不吃子移动
         else
             return -10;  // 没有在周围一格
     }
-    if ((qizi[move_to_x_my][move_to_y_my] == 0 && flagg == 0) || ((qizi[move_to_x_my][move_to_y_my] == 1) && flagg == 1)) {
+    if ((qizi[move_to_x_my][move_to_y_my] == 0 && player == 0) || ((qizi[move_to_x_my][move_to_y_my] == 1) && player == 1)) {
         return -10;  // eat the same color
     }
     if ((qizi[move_to_x_my][move_to_y_my] == 0 || qizi[move_to_x_my][move_to_y_my] == 1) && (((move_to_x_my == 0) + (move_to_y_my == 0) + (move_to_x_my == 6 - 1) + (move_to_y_my == 6 - 1) == 2) || ((move_from_x_my == 0) + (move_from_y_my == 0) + (move_from_x_my == 6 - 1) + (move_from_y_my == 6 - 1) == 2))) {
@@ -40,8 +82,8 @@ int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to
     }
 
     int po_from, po_to, line_from, line_to;
-    line_from = which_line(move_from_x_my, move_from_y_my);
-    line_to = which_line(move_to_x_my, move_to_y_my);
+    line_from = which_place_line(move_from_x_my, move_from_y_my);
+    line_to = which_place_line(move_to_x_my, move_to_y_my);
     if (line_from != 3 && line_from != line_to && line_to != 3) {
         return -10;  // 如果要吃的子和移动的子不在一条路上 吃不到
     }
@@ -63,8 +105,8 @@ int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to
                 line_1[i + 18] = 1;
             }
         }
-        po_from = weizhi_line_1(move_from_x_my, move_from_y_my);
-        po_to = weizhi_line_1(move_to_x_my, move_to_y_my);
+        po_from = place_line_1(move_from_x_my, move_from_y_my);
+        po_to = place_line_1(move_to_x_my, move_to_y_my);
         int po_to2 = 100, po_from2 = 100;
         if (po_from == 4 || po_from == 10 || po_from == 16)
             po_from2 = po_from + 3;
@@ -158,8 +200,8 @@ int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to
                 line_2[i + 18] = 1;
             }
         }
-        po_from = weizhi_line_2(move_from_x_my, move_from_y_my);
-        po_to = weizhi_line_2(move_to_x_my, move_to_y_my);  //???z
+        po_from = place_line_2(move_from_x_my, move_from_y_my);
+        po_to = place_line_2(move_to_x_my, move_to_y_my);  //???z
         int po_to2 = 100, po_from2 = 100;
         if (po_from == 3 || po_from == 9 || po_from == 15)
             po_from2 = po_from + 5;
@@ -238,17 +280,22 @@ int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to
     }
 }
 
-int whatI;
-int num_sou = 0;
-int qizi[6][6] = {2};
-
 int FenShuJudge(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to_y_my, int qizi[6][6], int player) {
+    /*printf("%d %d %d %d", move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my);
+    for (int i = 0; i < 6; i++)
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            printf("%d", qizi[j][i]);
+        }
+        printf("\n");
+    }*/
     if (Fenshu(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == -10)
         return -10;
     if (Fenshu(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == 10)
         return 10;
     num_sou++;
-    if (num_sou++ == 10) {
+    if (num_sou++ == 3) {
         num_sou = 0;
         return 0;
     }
@@ -287,8 +334,16 @@ int FenShuJudge(int move_from_x_my, int move_from_y_my, int move_to_x_my, int mo
                     continue;
 
                 fenshu = FenShuJudge(my_from_x[i], my_from_y[i], j, k, qizi, player);
-                if (fenshu == 10)
+                if (fenshu == 10) {
+                    qizi[move_from_x_my][move_from_y_my] = (player % 2 + 1);
+                    qizi[move_to_x_my][move_to_y_my] = 2;
                     return (-1) * fenshu;
+                }
+                if (fenshu == 0) {
+                    qizi[move_from_x_my][move_from_y_my] = (player % 2 + 1);
+                    qizi[move_to_x_my][move_to_y_my] = 2;
+                    return 0;
+                }
                 if (fenshu >= fenshumax) {
                     fenshumax = fenshu;
                     ready_from_x = my_from_x[i];
@@ -299,21 +354,22 @@ int FenShuJudge(int move_from_x_my, int move_from_y_my, int move_to_x_my, int mo
             }
         }
     }
-    qizi[move_from_x_my][move_from_y_my] = player;
+
+    qizi[move_from_x_my][move_from_y_my] = (player % 2 + 1);
     qizi[move_to_x_my][move_to_y_my] = 2;
     return (-1) * fenshumax;
 }
-
 SurakartaMove SurakartaAgentMine::CalculateMove() {
     // TODO: Implement your own ai here.
+    int qizi[6][6];
     int flag;
     SurakartaPlayer current_player = game_info_->current_player_;
     if (current_player == SurakartaPlayer::BLACK) {
         flag = 0;
-        whatI = 0;  // black player's turn
+        // black player's turn
     } else if (current_player == SurakartaPlayer::WHITE) {
         flag = 1;
-        whatI = 1;  // white player's turn
+        // white player's turn
     }
     int my_from_x[100], my_from_y[100], ff = 0;
     for (int i = 0; i < 6; i++) {
@@ -325,15 +381,15 @@ SurakartaMove SurakartaAgentMine::CalculateMove() {
                     my_from_y[ff] = j;
                     ff++;
                 }
-            }
-            if ((*board_)[i][j]->GetColor() == PieceColor::WHITE && flag == 1) {
+            } else if ((*board_)[i][j]->GetColor() == PieceColor::WHITE && flag == 1) {
                 qizi[i][j] = 1;
                 if (flag == 1) {
                     my_from_x[ff] = i;
                     my_from_y[ff] = j;
                     ff++;
                 }
-            }
+            } else
+                qizi[i][j] = 2;
         }
     }  // which place I can move from
     int fenshu, fenshumax = -10000, ready_to_x, ready_to_y, ready_from_x, ready_from_y;

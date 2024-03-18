@@ -1,9 +1,8 @@
-s  // wanchengjiben
+// wanchengjiben
 #include "surakarta_rule_manager.h"
 #include <iostream>
 
-    void
-    SurakartaRuleManager::OnUpdateBoard() {
+void SurakartaRuleManager::OnUpdateBoard() {
     // TODO:
     // Every time the board and game_info is updated to the next round version, this function will be called.
     // You don't need to implement this function if you don't need it.
@@ -44,6 +43,9 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
         flag = 0;  // black player's turn
     } else if (current_player == SurakartaPlayer::WHITE) {
         flag = 1;  // white player's turn
+    }
+    if (move.player != game_info_->current_player_) {
+        return SurakartaIllegalMoveReason::NOT_PLAYER_TURN;
     }
 
     if (move.from.x < 0 || move.from.x >= board_size_ || move.from.y < 0 || move.from.y >= board_size_ ||

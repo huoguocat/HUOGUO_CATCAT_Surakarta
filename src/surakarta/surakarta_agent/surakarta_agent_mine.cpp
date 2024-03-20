@@ -1,414 +1,78 @@
 #include "surakarta/surakarta_agent/surakarta_agent_mine.h"
-#include <iostream>
-int whatI;
-int num_sou = 0;
+#include <algorithm>
+#include <cstdlib>
+#include <random>
+#include <vector>
+#include "surakarta/surakarta_common.h"
 
-int place_line_1(int i, int j) {
-    if (i == 1)
-        return j;
-    if (j == 4)
-        return i + 6;
-    if (i == 4)
-        return 17 - j;
-    if (j == 1)
-        return 23 - i;
-}
-int place_line_2(int i, int j) {
-    if (i == 2)
-        return j;
-    if (j == 3)
-        return i + 6;
-    if (i == 3)
-        return 17 - j;
-    if (j == 2)
-        return 23 - i;
-}
-int which_place_line(int i, int j) {
-    int f1 = 0, f2 = 0;
-    if ((i == 1) || (i == 4) || (j == 1) || (j == 4))
-        f1 = 1;
-    if ((i == 2) || (i == 3) || (j == 2) || (j == 3))
-        f2 = 2;
-    return f1 + f2;
-}
-int player;  // black = 0  white = 1;
-int Fenshu(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to_y_my, int qizi[6][6], int player) {
-    /* if (move_from_x_my == 0 && move_from_y_my == 1 && move_to_x_my == 0 && move_to_y_my == 2)
-     {
-         printf("%d %d %d %d", move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my);
-         for (int i = 0; i < 6; i++)
-         {
-             for (int j = 0; j < 6; j++)
-             {
-                 printf("%d", qizi[j][i]);
-             }
-             printf("\n");
-         }
-     }*/
-    if (move_from_x_my < 0 || move_from_x_my >= 6 || move_from_y_my < 0 || move_from_y_my >= 6 ||
-        move_to_x_my < 0 || move_to_x_my >= 6 || move_to_y_my < 0 || move_to_y_my >= 6) {
-        return -6;  // 返回超出棋盘范围的非法移动原因
-    }
-
-    if (qizi[move_from_x_my][move_from_y_my] != 0 && qizi[move_from_x_my][move_from_y_my] != 1) {
-        return -6;  // 返回移动了一个不是棋子的位置的非法移动原因
-    }
-
-    if ((qizi[move_from_x_my][move_from_y_my] == 0 && player == 1) || ((qizi[move_from_x_my][move_from_y_my] == 1) && player == 0)) {
-        return -6;  // 返回移动了not the player's的非法移动原因
-    }
-    if (qizi[move_to_x_my][move_to_y_my] != 0 && qizi[move_to_x_my][move_to_y_my] != 1) {
-        int xf, yf;  // 判断有没有在周围一格内移动
-        if (move_from_x_my <= move_to_x_my)
-            xf = move_to_x_my - move_from_x_my;
-        else
-            xf = move_from_x_my - move_to_x_my;
-        if (move_from_y_my <= move_to_y_my)
-            yf = move_to_y_my - move_from_y_my;
-        else
-            yf = move_from_y_my - move_to_y_my;
-        // if (move_from_x_my == 0 && move_from_y_my == 1 && move_to_x_my == 0 && move_to_y_my == 2)
-        //  printf("fuckk %d %d", xf, yf);
-        if (xf <= 1 && yf <= 1)
-            return 0;  // 在周围一个内不吃子移动
-        else
-            return -10;  // 没有在周围一格
-    }
-    if ((qizi[move_to_x_my][move_to_y_my] == 0 && player == 0) || ((qizi[move_to_x_my][move_to_y_my] == 1) && player == 1)) {
-        return -10;  // eat the same color
-    }
-    if ((qizi[move_to_x_my][move_to_y_my] == 0 || qizi[move_to_x_my][move_to_y_my] == 1) && (((move_to_x_my == 0) + (move_to_y_my == 0) + (move_to_x_my == 6 - 1) + (move_to_y_my == 6 - 1) == 2) || ((move_from_x_my == 0) + (move_from_y_my == 0) + (move_from_x_my == 6 - 1) + (move_from_y_my == 6 - 1) == 2))) {
-        return -10;  // 如果在四个小角落就不能
-    }
-
-    int po_from, po_to, line_from, line_to;
-    line_from = which_place_line(move_from_x_my, move_from_y_my);
-    line_to = which_place_line(move_to_x_my, move_to_y_my);
-    if (line_from != 3 && line_from != line_to && line_to != 3) {
-        return -10;  // 如果要吃的子和移动的子不在一条路上 吃不到
-    }
-    int line_1[25] = {0}, line_2[25] = {0};
-
-    if (line_from == 1 || line_to == 1 || (line_to == 3 && line_from == 3)) {
-        for (int i = 0; i <= 5; i++)  // 读取这一条路上的棋子状态 line【x】 如果有挡路 1 没有棋子 0
-        {
-            if (qizi[1][i] == 0 || qizi[1][i] == 1) {
-                line_1[i] = 1;
-            }
-            if (qizi[i][4] == 0 || qizi[i][4] == 1) {
-                line_1[i + 6] = 1;
-            }
-            if (qizi[4][5 - i] == 0 || qizi[4][5 - i] == 1) {
-                line_1[i + 12] = 1;
-            }
-            if (qizi[5 - i][1] == 0 || qizi[5 - i][1] == 1) {
-                line_1[i + 18] = 1;
-            }
-        }
-        po_from = place_line_1(move_from_x_my, move_from_y_my);
-        po_to = place_line_1(move_to_x_my, move_to_y_my);
-        int po_to2 = 100, po_from2 = 100;
-        if (po_from == 4 || po_from == 10 || po_from == 16)
-            po_from2 = po_from + 3;
-        if (po_from == 1)
-            po_from2 = 22;
-        line_1[po_from2] = 0;
-        line_1[po_from] = 0;
-
-        if (po_to == 1 || po_to == 4 || po_to == 10 || po_to == 16)  // 关于交叉点处,到达此处可能能有两个标记点数字，到达任意一个即可。
-        {
-            if (po_to == 4 || po_to == 10 || po_to == 16)
-                po_to2 = po_to + 3;
-            if (po_to == 1)
-                po_to2 = 22;
-        }
-        // 当正好在旋吃轨迹两端时可以直接吃
-        if ((po_from == 0 && po_to == 23) || (po_from == 23 && po_to == 0) || (po_from == 17 && po_to == 18) || (po_from == 11 && po_to == 12) || (po_from == 12 && po_to == 11) || (po_from == 18 && po_to == 17) || (po_from == 5 && po_to == 6) || (po_from == 6 && po_to == 5))
-            return 10;
-        int ff = 0;
-        // 开始向坐标增大方向旋吃
-        for (int i = po_from + 1;; i++) {
-            if (i == 24)
-                i = 0;
-
-            if ((i == po_to || i == po_to2) && ff == 1)
-                return 10;
-            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                ff = 1;
-            if (line_1[i] != 0)
-                break;
-        }
-        ff = 0;
-        // 开始向坐标减小方向旋吃
-        for (int i = po_from - 1;; i--) {
-            if (i == -1)
-                i = 23;
-
-            if ((i == po_to || i == po_to2) && ff == 1)
-                return 10;
-            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                ff = 1;
-            if (line_1[i] != 0)
-                break;
-        }
-        // 当from也在交叉点时候 from也有两个目标
-        if (po_from == 1 || po_from == 4 || po_from == 10 || po_from == 16) {
-            if (po_from == 4 || po_from == 10 || po_from == 16)
-                po_from = po_from + 3;
-            if (po_from == 1)
-                po_from = 22;
-            ff = 0;
-            for (int i = po_from + 1;; i++) {
-                if (i == 24)
-                    i = 0;
-
-                if ((i == po_to || i == po_to2) && ff == 1)
-                    return 10;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-                if (line_1[i] != 0)
-                    break;
-            }
-            ff = 0;
-            for (int i = po_from - 1;; i--) {
-                if (i == -1)
-                    i = 23;
-
-                if ((i == po_to || i == po_to2) && ff == 1)
-                    return 10;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-                if (line_1[i] != 0)
-                    break;
-            }
-        }
-        if (line_from == 1 || line_to == 1)
-            return -10;
-    }
-    if (line_from == 2 || line_to == 2 || (line_to == 3 && line_from == 3)) {
-        for (int i = 0; i <= 5; i++) {
-            if (qizi[2][i] == 0 || qizi[2][i] == 1) {
-                line_2[i] = 1;
-            }
-            if (qizi[i][3] == 0 || qizi[i][3] == 1) {
-                line_2[i + 6] = 1;
-            }
-            if (qizi[3][5 - i] == 0 || qizi[3][5 - i] == 1) {
-                line_2[i + 12] = 1;
-            }
-            if (qizi[5 - i][2] == 0 || qizi[5 - i][2] == 1) {
-                line_2[i + 18] = 1;
-            }
-        }
-        po_from = place_line_2(move_from_x_my, move_from_y_my);
-        po_to = place_line_2(move_to_x_my, move_to_y_my);  //???z
-        int po_to2 = 100, po_from2 = 100;
-        if (po_from == 3 || po_from == 9 || po_from == 15)
-            po_from2 = po_from + 5;
-        if (po_from == 2)
-            po_from2 = 21;
-        line_2[po_from2] = 0;
-        line_2[po_from] = 0;
-        if (po_to == 3 || po_to == 9 || po_to == 15 || po_to == 2)  // 3=8 9=14 15=20 21=2
-        {
-            if (po_to == 3 || po_to == 9 || po_to == 15) {
-                po_to2 = po_to + 5;
-            }
-            if (po_to == 2)
-                po_to2 = 21;
-        }
-        if ((po_from == 0 && po_to == 23) || (po_from == 23 && po_to == 0) || (po_from == 17 && po_to == 18) || (po_from == 11 && po_to == 12) || (po_from == 12 && po_to == 11) || (po_from == 18 && po_to == 17) || (po_from == 5 && po_to == 6) || (po_from == 6 && po_to == 5))
-            return 10;
-        int ff = 0;
-        for (int i = po_from + 1;; i++) {
-            if (i == 24)
-                i = 0;
-
-            if ((i == po_to || i == po_to2) && ff == 1)
-                return 10;
-            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                ff = 1;
-            if (line_2[i] != 0)
-                break;
-        }
-        ff = 0;
-        for (int i = po_from - 1;; i--) {
-            if (i == -1)
-                i = 23;
-
-            if ((i == po_to || i == po_to2) && ff == 1)
-                return 10;
-            if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                ff = 1;
-            if (line_2[i] != 0)
-                break;
-        }
-        if (po_from == 3 || po_from == 9 || po_from == 15 || po_from == 2)  // 3=8 9=14 15=20 21=2
-        {
-            if (po_from == 3 || po_from == 9 || po_from == 15) {
-                po_from = po_from + 5;
-            }
-            if (po_from == 2)
-                po_from = 21;
-            ff = 0;
-            for (int i = po_from + 1;; i++) {
-                if (i == 24)
-                    i = 0;
-
-                if ((i == po_to || i == po_to2) && ff == 1)
-                    return 10;
-                if (line_2[i] != 0)
-                    break;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-            }
-            ff = 0;
-            for (int i = po_from - 1;; i--) {
-                if (i == -1)
-                    i = 23;
-
-                if ((i == po_to || i == po_to2) && ff == 1)
-                    return 10;
-                if (line_2[i] != 0)
-                    break;
-                if (i == 6 || i == 5 || i == 11 || i == 12 || i == 17 || i == 18 || i == 0 || i == 23)
-                    ff = 1;
-            }
-        }
-
-        return -10;
-    }
-}
-
-int FenShuJudge(int move_from_x_my, int move_from_y_my, int move_to_x_my, int move_to_y_my, int qizi[6][6], int player) {
-    /*printf("%d %d %d %d", move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my);
-    for (int i = 0; i < 6; i++)
-    {
-        for (int j = 0; j < 6; j++)
-        {
-            printf("%d", qizi[j][i]);
-        }
-        printf("\n");
-    }*/
-    if (Fenshu(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == -10)
-        return -10;
-    if (Fenshu(move_from_x_my, move_from_y_my, move_to_x_my, move_to_y_my, qizi, player) == 10)
-        return 10;
-    num_sou++;
-    if (num_sou++ == 3) {
-        num_sou = 0;
-        return 0;
-    }
-    int my_from_x[100], my_from_y[100], ff = 0;
-    qizi[move_from_x_my][move_from_y_my] = 2;
-    qizi[move_to_x_my][move_to_y_my] = player;
-    if (player == 0)
-        player = 1;
-    else
-        player = 0;
-    for (int i = 0; i < 6; i++) {
-        for (int j = 0; j < 6; j++) {
-            if (qizi[i][j] == 0) {
-                qizi[i][j] = 0;
-                if (player == 0) {
-                    my_from_x[ff] = i;
-                    my_from_y[ff] = j;
-                    ff++;
-                }
-            }
-            if (qizi[i][j] == 1) {
-                qizi[i][j] = 1;
-                if (player == 1) {
-                    my_from_x[ff] = i;
-                    my_from_y[ff] = j;
-                    ff++;
-                }
-            }
-        }
-    }  // which place I can move from
-    int fenshu, fenshumax = -10000, ready_to_x, ready_to_y, ready_from_x, ready_from_y;
-    for (int i = 0; i < ff; i++) {
-        for (int j = 0; j < 6; j++) {
-            for (int k = 0; k < 6; k++) {
-                if (Fenshu(my_from_x[i], my_from_y[i], j, k, qizi, player) == -10)
-                    continue;
-
-                fenshu = FenShuJudge(my_from_x[i], my_from_y[i], j, k, qizi, player);
-                if (fenshu == 10) {
-                    qizi[move_from_x_my][move_from_y_my] = (player % 2 + 1);
-                    qizi[move_to_x_my][move_to_y_my] = 2;
-                    return (-1) * fenshu;
-                }
-                if (fenshu == 0) {
-                    qizi[move_from_x_my][move_from_y_my] = (player % 2 + 1);
-                    qizi[move_to_x_my][move_to_y_my] = 2;
-                    return 0;
-                }
-                if (fenshu >= fenshumax) {
-                    fenshumax = fenshu;
-                    ready_from_x = my_from_x[i];
-                    ready_from_y = my_from_y[i];
-                    ready_to_x = j;
-                    ready_to_y = k;
-                }
-            }
-        }
-    }
-
-    qizi[move_from_x_my][move_from_y_my] = (player % 2 + 1);
-    qizi[move_to_x_my][move_to_y_my] = 2;
-    return (-1) * fenshumax;
-}
 SurakartaMove SurakartaAgentMine::CalculateMove() {
     // TODO: Implement your own ai here.
-    int qizi[6][6];
-    int flag;
-    SurakartaPlayer current_player = game_info_->current_player_;
-    if (current_player == SurakartaPlayer::BLACK) {
-        flag = 0;
-        // black player's turn
-    } else if (current_player == SurakartaPlayer::WHITE) {
-        flag = 1;
-        // white player's turn
-    }
-    int my_from_x[100], my_from_y[100], ff = 0;
+    // 生成from集与to集
+    std::vector<SurakartaPosition> from;
+    std::vector<SurakartaPosition> to;
+    std::vector<SurakartaPosition> opponent;
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 6; j++) {
-            if ((*board_)[i][j]->GetColor() == PieceColor::BLACK) {
-                qizi[i][j] = 0;
-                if (flag == 0) {
-                    my_from_x[ff] = i;
-                    my_from_y[ff] = j;
-                    ff++;
-                }
-            } else if ((*board_)[i][j]->GetColor() == PieceColor::WHITE && flag == 1) {
-                qizi[i][j] = 1;
-                if (flag == 1) {
-                    my_from_x[ff] = i;
-                    my_from_y[ff] = j;
-                    ff++;
-                }
-            } else
-                qizi[i][j] = 2;
+            SurakartaPosition position = {i, j};
+            if ((*board_)[i][j]->GetColor() == game_info_->current_player_) {
+                from.push_back(position);
+            } else {
+                to.push_back(position);
+            }
+            if ((*board_)[i][j]->GetColor() != game_info_->current_player_ && (*board_)[i][j]->GetColor() != PieceColor::NONE && (*board_)[i][j]->GetColor() != PieceColor::UNKNOWN) {
+                opponent.push_back(position);
+            }
         }
-    }  // which place I can move from
-    int fenshu, fenshumax = -10000, ready_to_x, ready_to_y, ready_from_x, ready_from_y;
-    for (int i = 0; i < ff; i++) {
-        for (int j = 0; j < 6; j++) {
-            for (int k = 0; k < 6; k++) {
-                if (Fenshu(my_from_x[i], my_from_y[i], j, k, qizi, flag) == -10)
-                    continue;
-                fenshu = FenShuJudge(my_from_x[i], my_from_y[i], j, k, qizi, flag);
-                if (fenshu >= fenshumax) {
-                    fenshumax = fenshu;
-                    ready_from_x = my_from_x[i];
-                    ready_from_y = my_from_y[i];
-                    ready_to_x = j;
-                    ready_to_y = k;
+    }
+    //  优先选择能吃子且不被吃的MOVE，其次选能吃子但会被吃的MOVE，再次选不能吃子但不会被吃的MOVE，最后选不能吃子且会被吃的MOVE <-优先级
+    SurakartaMove rd_move2({0, 0}, {0, 0}, game_info_->current_player_);
+    int capflag_of_being_captured = 0, nonflag_of_not_captured = 0;
+    for (auto& my_from : from) {  // 枚举我方可移动棋子
+        for (auto& my_to : to) {  // 枚举当前被枚举我方子的去处
+            SurakartaMove move = {p1, p2, game_info_->current_player_};
+            SurakartaIllegalMoveReason reason = rule_manager_->JudgeMove(move);
+            if (reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {  // 当前被枚举我方子有吃掉对方子的机会
+                for (auto& p : opponent) {                                   // 枚举对方子，检查我方子移动后是否会被对方子吃掉
+                    SurakartaMove move_of_opponent = {p,
+                                                      p2,
+                                                      (*board_)[p.x][p.y]->GetColor()};
+                    PieceColor origin = (*board_)[p2.x][p2.y]->GetColor();
+                    PieceColor origin_from = (*board_)[p.x][p.y]->GetColor();  // 改变原来棋盘，便于judgemove
+                    (*board_)[p2.x][p2.y]->SetColor(game_info_->current_player_);
+                    (*board_)[p.x][p.y]->SetColor(PieceColor::NONE);
+                    SurakartaIllegalMoveReason reason_of_opponent = rule_manager_->JudgeMove(move_of_opponent);
+                    (*board_)[p2.x][p2.y]->SetColor(origin);
+                    (*board_)[p.x][p.y]->SetColor(origin_from);                                  // 恢复棋盘
+                    if (reason_of_opponent != SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {  // 可吃对方子且不会被吃
+                        return move;
+                    }
+                }
+                if (capflag_of_being_captured == 0) {  // 记录第一个可吃对方子且会被吃掉的情况，不再记录之后相同的情况
+                    rd_move2 = move;
+                    capflag_of_being_captured = 1;
+                }
+            } else if (reason == SurakartaIllegalMoveReason::LEGAL_NON_CAPTURE_MOVE) {  // 当前被枚举我方子没有吃掉对方子的机会
+                for (auto& p : opponent) {                                              // 判断移动后是否会被对方子吃掉
+                    SurakartaMove move_of_opponent = {p,
+                                                      p2,
+                                                      (*board_)[p.x][p.y]->GetColor()};
+                    PieceColor origin = (*board_)[p2.x][p2.y]->GetColor();
+                    PieceColor origin_from = (*board_)[p.x][p.y]->GetColor();
+                    (*board_)[p2.x][p2.y]->SetColor(game_info_->current_player_);
+                    (*board_)[p.x][p.y]->SetColor(PieceColor::NONE);
+                    SurakartaIllegalMoveReason reason_of_opponent = rule_manager_->JudgeMove(move_of_opponent);
+                    (*board_)[p2.x][p2.y]->SetColor(origin);
+                    (*board_)[p.x][p.y]->SetColor(origin_from);
+                    if (reason_of_opponent != SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE && capflag_of_being_captured == 0 && nonflag_of_not_captured == 0) {  // 记录第一个不会吃掉对方子且移动后不会被对方子吃掉的情况，不再记录之后相同的情况，且优先级高于此种情况的情况出现后也不再记录此种情况
+                        rd_move2 = move;
+                        nonflag_of_not_captured = 1;
+                    }
+                }
+                if (capflag_of_being_captured == 0 && nonflag_of_not_captured == 0) {  // 优先级高于此种情况（移动不会吃掉对方子且会被对方子吃掉，出现概率极低但确实会出现）的情况出现后，不再记录此种情况
+                    rd_move2 = move;
                 }
             }
         }
-    }  // which place I can move to
-
-    return SurakartaMove({ready_from_x, ready_from_y}, {ready_to_x, ready_to_y}, game_info_->current_player_);
+    }
+    return rd_move2;
 }

@@ -1,13 +1,6 @@
-// wanchengjiben
 #include "surakarta_rule_manager.h"
 #include <iostream>
-
-void SurakartaRuleManager::OnUpdateBoard() {
-    // TODO:
-    // Every time the board and game_info is updated to the next round version, this function will be called.
-    // You don't need to implement this function if you don't need it.
-    // A more delicate way is to use Qt's signal and slot mechanism, but that's the advanced part.
-}
+void SurakartaRuleManager::OnUpdateBoard() {}
 int weizhi_line_1(int i, int j) {
     if (i == 1)
         return j;
@@ -37,16 +30,11 @@ int which_line(int i, int j) {
     return f1 + f2;
 }
 SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& move) {
-    int flag;  // black = 0  white = 1;
     SurakartaPlayer current_player = game_info_->current_player_;
-    if (current_player == SurakartaPlayer::BLACK) {
-        flag = 0;  // black player's turn
-    } else if (current_player == SurakartaPlayer::WHITE) {
-        flag = 1;  // white player's turn
+    if (move.player != game_info_->current_player_) {
+        return SurakartaIllegalMoveReason::NOT_PLAYER_TURN;
     }
-
-    if (move.from.x < 0 || move.from.x >= board_size_ || move.from.y < 0 || move.from.y >= board_size_ ||
-        move.to.x < 0 || move.to.x >= board_size_ || move.to.y < 0 || move.to.y >= board_size_) {
+    if (move.from.x >= board_size_ || move.from.y >= board_size_ || move.to.x >= board_size_ || move.to.y >= board_size_) {
         return SurakartaIllegalMoveReason::OUT_OF_BOARD;  // 返回超出棋盘范围的非法移动原因
     }
 
@@ -54,7 +42,7 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
         return SurakartaIllegalMoveReason::NOT_PIECE;  // 返回移动了一个不是棋子的位置的非法移动原因
     }
 
-    if (((*board_)[move.from.x][move.from.y]->GetColor() == PieceColor::BLACK && flag == 1) || (((*board_)[move.from.x][move.from.y]->GetColor() == PieceColor::WHITE) && flag == 0)) {
+    if (((*board_)[move.from.x][move.from.y]->GetColor() == PieceColor::BLACK && current_player == SurakartaPlayer::WHITE) || (((*board_)[move.from.x][move.from.y]->GetColor() == PieceColor::WHITE) && current_player == SurakartaPlayer::BLACK)) {
         return SurakartaIllegalMoveReason::NOT_PLAYER_PIECE;  // 返回移动了not the player's的非法移动原因
     }
     if ((*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::BLACK && (*board_)[move.to.x][move.to.y]->GetColor() != PieceColor::WHITE) {
@@ -73,7 +61,7 @@ SurakartaIllegalMoveReason SurakartaRuleManager::JudgeMove(const SurakartaMove& 
         else
             return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;
     }
-    if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK && flag == 0) || (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && flag == 1)) {
+    if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK && current_player == SurakartaPlayer::BLACK) || (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && current_player == SurakartaPlayer::WHITE)) {
         return SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE;  // eat the same color
     }
     if (((*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::BLACK || (*board_)[move.to.x][move.to.y]->GetColor() == PieceColor::WHITE) && (((move.to.x == 0) + (move.to.y == 0) + (move.to.x == board_size_ - 1) + (move.to.y == board_size_ - 1) == 2) || ((move.from.x == 0) + (move.from.y == 0) + (move.from.x == board_size_ - 1) + (move.from.y == board_size_ - 1) == 2))) {
@@ -281,7 +269,7 @@ std::pair<SurakartaEndReason, SurakartaPlayer> SurakartaRuleManager::JudgeEnd(co
         flag = 1;  // white player's turn
     }
     if (reason == SurakartaIllegalMoveReason::ILLIGAL || reason == SurakartaIllegalMoveReason::NOT_PLAYER_TURN || reason == SurakartaIllegalMoveReason::OUT_OF_BOARD || reason == SurakartaIllegalMoveReason::NOT_PIECE || reason == SurakartaIllegalMoveReason::NOT_PLAYER_PIECE || reason == SurakartaIllegalMoveReason::ILLIGAL_CAPTURE_MOVE || reason == SurakartaIllegalMoveReason::ILLIGAL_NON_CAPTURE_MOVE) {
-        if (flag == 0)
+        if (current_player == SurakartaPlayer::BLACK)
             return std::make_pair(SurakartaEndReason::ILLIGAL_MOVE, SurakartaPlayer::WHITE);
         return std::make_pair(SurakartaEndReason::ILLIGAL_MOVE, SurakartaPlayer::BLACK);
     }
@@ -297,10 +285,10 @@ std::pair<SurakartaEndReason, SurakartaPlayer> SurakartaRuleManager::JudgeEnd(co
         }
     }
 
-    if (blacknum == 1 && flag == 1 && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
+    if (blacknum == 1 && current_player == SurakartaPlayer::WHITE && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
         return std::make_pair(SurakartaEndReason::CHECKMATE, SurakartaPlayer::WHITE);
     }
-    if (whitenum == 1 && flag == 0 && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
+    if (whitenum == 1 && current_player == SurakartaPlayer::BLACK && reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
         return std::make_pair(SurakartaEndReason::CHECKMATE, SurakartaPlayer::BLACK);
     }
     if (reason == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {
@@ -319,7 +307,7 @@ std::pair<SurakartaEndReason, SurakartaPlayer> SurakartaRuleManager::JudgeEnd(co
     }
 
     if (blacknum >= 1 && whitenum >= 1) {
-        if (flag == 0)
+        if (current_player == SurakartaPlayer::BLACK)
             return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);
         else
             return std::make_pair(SurakartaEndReason::NONE, SurakartaPlayer::NONE);

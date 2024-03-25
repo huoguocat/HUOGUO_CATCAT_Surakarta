@@ -99,7 +99,7 @@ SurakartaMove SurakartaAgentMine::CalculateMove() {
                                 SurakartaMove move_of_opponent = {p, my_to, (*board_)[p.x][p.y]->GetColor()};
                                 (*board_)[my_to.x][my_to.y]->SetColor(game_info_->current_player_);
                                 (*board_)[my_from.x][my_from.y]->SetColor(PieceColor::NONE);
-                                SurakartaIllegalMoveReason reason_of_opponent = rule_manager_->JudgeMove(move_of_opponent);
+                                SurakartaIllegalMoveReason reason_opponent = rule_manager_->JudgeMove(move_of_opponent);
                                 (*board_)[my_from.x][my_from.y]->SetColor(game_info_->current_player_);
                                 (*board_)[my_to.x][my_to.y]->SetColor(PieceColor::NONE);
                                 if (reason_opponent == SurakartaIllegalMoveReason::LEGAL_CAPTURE_MOVE) {  // 可吃对方子且不会被吃
